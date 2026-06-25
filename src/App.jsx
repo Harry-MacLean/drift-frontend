@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 function App() {
@@ -17,6 +17,7 @@ function App() {
   const [chain, setChain] = useState([])
   const [hasSearched, setHasSearched] = useState(false)
   const [chainLoading, setChainLoading] = useState(false)
+  const [movers, setMovers] = useState([])
   const handleChain = async () => {
   setChainLoading(true)
   const response = await fetch(`http://127.0.0.1:8000/chain/${ticker}/${date}`)
@@ -26,9 +27,24 @@ function App() {
   setChainLoading(false)
 }
 
+ useEffect(() => {
+    fetch('http://127.0.0.1:8000/recent')
+      .then(res => res.json())
+      .then(data => setMovers(data))
+
+  }, [])
+
   return (
     <div>
       <h1>Drift</h1>
+      <select onChange={(e) => setTicker(e.target.value)}>
+        <option value="">-- Select a recent mover --</option>
+        {movers.map((mover, index) => (
+          <option key={index} value={mover.ticker}>
+            {mover.ticker} | {mover.pct_change}% | {mover.date}
+          </option>
+    ))}
+  </select>
       <input placeholder="Ticker e.g. AIR.NZ" value={ticker} onChange={(e) => setTicker(e.target.value)} />
       <input placeholder="Date e.g. 2026-06-09" value={date} onChange={(e) => setDate(e.target.value)} />
       <button onClick={handleExplain}>Explain</button>
