@@ -1,6 +1,106 @@
 
+// import { useState, useEffect } from 'react'
+// import ReactMarkdown from 'react-markdown'
+
+// function App() {
+//   const [moveDate, setMoveDate] = useState([])
+//   const [ticker, setTicker] = useState('')
+//   const [date, setDate] = useState('')
+//   const [explanation, setExplanation] = useState('')
+//   const [explainLoading, setExplainLoading] = useState(false)
+//   const handleExplain = async () => {
+//   setExplainLoading(true)
+//   const response = await fetch(`http://127.0.0.1:8000/explain/${ticker}/${date}`)
+//   const data = await response.json()
+//   setExplanation(data)
+//   setExplainLoading(false)
+//   }
+//   const [chain, setChain] = useState([])
+//   const [hasSearched, setHasSearched] = useState(false)
+//   const [chainLoading, setChainLoading] = useState(false)
+//   const [movers, setMovers] = useState([])
+//   const handleChain = async () => {
+//   setChainLoading(true)
+//   const response = await fetch(`http://127.0.0.1:8000/chain/${ticker}/${date}`)
+//   const data = await response.json()
+//   setChain(data)
+//   setHasSearched(true)
+//   setChainLoading(false)
+// }
+
+//  useEffect(() => {
+//     fetch('http://127.0.0.1:8000/recent')
+//       .then(res => res.json())
+//       .then(data => setMovers(data))
+
+//   }, [])
+
+//   useEffect(() => {
+//     if (ticker) {
+//       const timer = setTimeout(() => {
+//         fetch(`http://127.0.0.1:8000/detect/${ticker}`)
+//           .then(res => res.json())
+//           .then(data => setMoveDate(Object.keys(data["PCT Change %"])))
+//       }, 800)
+//       return () => clearTimeout(timer)
+//     }
+//   }, [ticker])
+
+
+
+//   return (
+//     <div>
+//       <h1>Drift</h1>
+//       <select onChange={(e) => setTicker(e.target.value)}>
+//         <option value="">-- Select a recent mover --</option>
+//         {movers.map((mover, index) => (
+//           <option key={index} value={mover.ticker}>
+//             {mover.ticker} | {mover.pct_change}% | {mover.date}
+//           </option>
+//         ))}
+//       </select>
+//       <input placeholder="Ticker e.g. AIR.NZ" value={ticker} onChange={(e) => setTicker(e.target.value)} />
+//       <select onChange={(e) => setDate(e.target.value)}>
+//         <option value="">-- Select a spike date --</option>
+//         {moveDate.map((d, index) => (
+//           <option key={index} value={d}>{d}</option>
+//         ))}
+//       </select>
+//       <input placeholder="Date e.g. 2026-06-09" value={date} onChange={(e) => setDate(e.target.value)} />
+//       <button onClick={handleExplain}>Explain</button>
+//       {explainLoading && <p>Loading explanation...</p>}
+//       <button onClick={handleChain}>Find Chain Reaction</button>
+//       {chainLoading && <p>Loading chain reaction...</p>}
+//       <ReactMarkdown>{explanation}</ReactMarkdown>
+      
+//       {hasSearched && chain.length === 0 ? (
+//         <p>No chain reaction found for {ticker} on {date}.</p>
+//       ) : (
+      
+//       chain.map((item, index) => (
+//         <div key={index}>
+//           <h3>{item.ticker}</h3>
+//           <p>Date: {item.date} | {item.spike}%</p>
+//           <ul>
+//             {item.news.map((headline, i) => (
+//               <li key={i}>{headline}</li>
+//             ))} 
+//           </ul> 
+//         </div> 
+//       )))}
+//     </div>
+//   )
+// }
+
+// export default App
+
+
+
+
+
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import './App.css'
 
 function App() {
   const [moveDate, setMoveDate] = useState([])
@@ -9,85 +109,144 @@ function App() {
   const [explanation, setExplanation] = useState('')
   const [explainLoading, setExplainLoading] = useState(false)
   const handleExplain = async () => {
-  setExplainLoading(true)
-  const response = await fetch(`http://127.0.0.1:8000/explain/${ticker}/${date}`)
-  const data = await response.json()
-  setExplanation(data)
-  setExplainLoading(false)
+    setExplainLoading(true)
+    const response = await fetch(`http://127.0.0.1:8000/explain/${ticker}/${date}`)
+    const data = await response.json()
+    setExplanation(data)
+    setExplainLoading(false)
   }
   const [chain, setChain] = useState([])
   const [hasSearched, setHasSearched] = useState(false)
   const [chainLoading, setChainLoading] = useState(false)
   const [movers, setMovers] = useState([])
   const handleChain = async () => {
-  setChainLoading(true)
-  const response = await fetch(`http://127.0.0.1:8000/chain/${ticker}/${date}`)
-  const data = await response.json()
-  setChain(data)
-  setHasSearched(true)
-  setChainLoading(false)
-}
+    setChainLoading(true)
+    const response = await fetch(`http://127.0.0.1:8000/chain/${ticker}/${date}`)
+    const data = await response.json()
+    setChain(data)
+    setHasSearched(true)
+    setChainLoading(false)
+  }
 
- useEffect(() => {
+  useEffect(() => {
     fetch('http://127.0.0.1:8000/recent')
       .then(res => res.json())
       .then(data => setMovers(data))
-
   }, [])
 
   useEffect(() => {
     if (ticker) {
-      const timer = setTimeout(() => {
-        fetch(`http://127.0.0.1:8000/detect/${ticker}`)
-          .then(res => res.json())
-          .then(data => setMoveDate(Object.keys(data["PCT Change %"])))
+      const timer = setTimeout(async () => {
+        const res = await fetch(`http://127.0.0.1:8000/detect/${ticker}`)
+        const data = await res.json()
+        const allDates = Object.keys(data["PCT Change %"])
+        
+        const checks = await Promise.all(
+          allDates.map(d =>
+            fetch(`http://127.0.0.1:8000/news_available/${ticker}/${d}`)
+              .then(r => r.json())
+              .then(hasNews => ({ date: d, hasNews }))
+          )
+        )
+        
+        const filtered = checks.filter(c => c.hasNews).map(c => c.date)
+        setMoveDate(filtered)
       }, 800)
       return () => clearTimeout(timer)
     }
   }, [ticker])
 
-
-
   return (
-    <div>
-      <h1>Drift</h1>
-      <select onChange={(e) => setTicker(e.target.value)}>
-        <option value="">-- Select a recent mover --</option>
-        {movers.map((mover, index) => (
-          <option key={index} value={mover.ticker}>
-            {mover.ticker} | {mover.pct_change}% | {mover.date}
-          </option>
-        ))}
-      </select>
-      <input placeholder="Ticker e.g. AIR.NZ" value={ticker} onChange={(e) => setTicker(e.target.value)} />
-      <select onChange={(e) => setDate(e.target.value)}>
-        <option value="">-- Select a spike date --</option>
-        {moveDate.map((d, index) => (
-          <option key={index} value={d}>{d}</option>
-        ))}
-      </select>
-      <input placeholder="Date e.g. 2026-06-09" value={date} onChange={(e) => setDate(e.target.value)} />
-      <button onClick={handleExplain}>Explain</button>
-      {explainLoading && <p>Loading explanation...</p>}
-      <button onClick={handleChain}>Find Chain Reaction</button>
-      {chainLoading && <p>Loading chain reaction...</p>}
-      <ReactMarkdown>{explanation}</ReactMarkdown>
-      
+    <div className="drift-wrap">
+      <h1 className="drift-logo">Drift</h1>
+      <p className="drift-sub">NZX / ASX price move explainer</p>
+
+      <p className="section-label">Select a stock</p>
+
+      <div className="field">
+        <label>Recent movers</label>
+        <select onChange={(e) => setTicker(e.target.value)}>
+          <option value="">— Select a recent mover —</option>
+          {movers.map((mover, index) => (
+            <option key={index} value={mover.ticker}>
+              {mover.ticker} · {mover.pct_change}% · {mover.date}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label>Or enter a ticker manually</label>
+        <input
+          placeholder="e.g. AIR.NZ"
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value)}
+        />
+      </div>
+
+      <div className="divider" />
+
+      <p className="section-label">Select a date</p>
+
+      <div className="field">
+        <label>Spike dates for this ticker</label>
+        <select onChange={(e) => setDate(e.target.value)}>
+          <option value="">— Select a spike date —</option>
+          {moveDate.map((d, index) => (
+            <option key={index} value={d}>{d}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label>Or enter a date manually</label>
+        <input
+          placeholder="e.g. 2026-06-09"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+      </div>
+
+      <div className="btn-row">
+        <button className="btn" onClick={handleExplain}>Explain move</button>
+        <button className="btn primary" onClick={handleChain}>Find chain reaction</button>
+      </div>
+
+      {explainLoading && <p className="status-line"><span className="dot" />Loading explanation…</p>}
+      {chainLoading && <p className="status-line"><span className="dot" />Loading chain reaction…</p>}
+
+      {explanation && (
+        <div className="result-block">
+          <p className="result-label">Explanation</p>
+          <div className="explanation-text">
+            <ReactMarkdown>{explanation}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+
       {hasSearched && chain.length === 0 ? (
-        <p>No chain reaction found for {ticker} on {date}.</p>
+        <p className="empty-state">No chain reaction found for {ticker} on {date}.</p>
       ) : (
-      
-      chain.map((item, index) => (
-        <div key={index}>
-          <h3>{item.ticker}</h3>
-          <p>Date: {item.date} | {item.spike}%</p>
-          <ul>
-            {item.news.map((headline, i) => (
-              <li key={i}>{headline}</li>
-            ))} 
-          </ul> 
-        </div> 
-      )))}
+        chain.map((item, index) => (
+          <div className="result-block" key={index}>
+            <p className="result-label">Chain reaction</p>
+            <div className="chain-item">
+              <div className="chain-ticker">
+                {item.ticker}
+                <span className={parseFloat(item.spike) >= 0 ? 'spike-pos chain-spike' : 'spike-neg chain-spike'}>
+                  {parseFloat(item.spike) >= 0 ? '+' : ''}{parseFloat(item.spike).toFixed(2)}%
+                </span>
+              </div>
+              <p className="chain-date">{item.date}</p>
+              <ul className="chain-news">
+                {item.news.map((headline, i) => (
+                  <li key={i}>{headline}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   )
 }
